@@ -15,7 +15,7 @@ func _initialize() -> void:
 	var cam: GameCamera = scene.get_node("World/Player/Camera")
 
 	var ok := true
-	ok = ok and _check(map.get_tile(Vector2i(0, 0)) == TileDB.GRASS, "клетка (0,0) = трава")
+	ok = ok and _check(map.get_tile(Vector2i(0, 0)) == TileDB.DIRT, "клетка (0,0) = трава")
 	ok = ok and _check(map.get_tile(Vector2i(48, 14)) == TileDB.WATER, "центр озера = вода")
 	ok = ok and _check(not map.is_cell_walkable(Vector2i(48, 14)), "вода непроходима")
 	ok = ok and _check(not map.in_bounds(Vector2i(-1, 0)), "клетки вне поля нет")

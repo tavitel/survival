@@ -14,13 +14,15 @@ extends Node2D
 signal map_ready
 
 const TILESET_PATH := "res://assets/tiles/map_tileset.tres"
-const ATLAS_SOURCE_PATH := "res://assets/tiles/grass_atlas.png"
+const ATLAS_SOURCE_PATH := "res://assets/tiles/landscape_atlas.png"
 const FALLBACK_TEXTURE_PATH := "res://assets/tiles/missing_tile.png"
+const TREE_SCENE_PATH := "res://scenes/tree.tscn"
 
 @export var tile_size: Vector2i = Config.TILE_SIZE
 @export var map_size: Vector2i = Config.MAP_SIZE
 
 var _cells := {}                 # Vector2i -> int (id тайла)
+var _blocked := {}               # Vector2i -> true (клетки, перекрытые объектами: деревья)
 var _tile_set: TileSet
 var _layer: TileMapLayer
 
@@ -57,8 +59,24 @@ func in_bounds(cell: Vector2i) -> bool:
 
 
 ## Проходимость клетки — единая точка истины для игрока и будущих мобов.
+## Учитывает и тип тайла (вода — нельзя), и объекты, стоящие в клетке
+## (деревья блокируют клетку через block_cell).
 func is_cell_walkable(cell: Vector2i) -> bool:
+	if _blocked.has(cell):
+		return false
 	return TileDB.is_walkable(get_tile(cell))
+
+
+## Перекрыть/освободить клетку объектом (дерево, камень-бoulder и т.п.).
+func block_cell(cell: Vector2i, blocked := true) -> void:
+	if blocked:
+		_blocked[cell] = true
+	else:
+		_blocked.erase(cell)
+
+
+func is_cell_blocked(cell: Vector2i) -> bool:
+	return _blocked.has(cell)
 
 
 func cell_to_world(cell: Vector2i) -> Vector2:
@@ -83,7 +101,7 @@ func world_bounds() -> Rect2:
 
 # ------------------------------------------------------------- генерация ----
 
-## Заполняет всё поле 64x64. Пример процедурной генерации: трава, каменные
+## Заполняет всё поле 64x64. Пример процедурной генерации: земля, каменные
 ## россыпи и озеро (вода непроходима). Позже заменяется на карту из файла.
 func _fill_map() -> void:
 	var rnd := RandomNumberGenerator.new()
@@ -91,7 +109,7 @@ func _fill_map() -> void:
 	for y in range(map_size.y):
 		for x in range(map_size.x):
 			var cell := Vector2i(x, y)
-			var id := TileDB.GRASS
+			var id := TileDB.DIRT
 			# озеро ближе к правому верхнему углу
 			var d_pond := Vector2(cell - Vector2i(48, 14)).length()
 			if d_pond < 7.0:
@@ -104,6 +122,26 @@ func _fill_map() -> void:
 			elif Vector2(cell - Vector2i(34, 46)).length() < 4.0 and rnd.randf() < 0.6:
 				id = TileDB.STONE
 			_cells[cell] = id
+
+
+## Деревья рядом со стартовой точкой игрока: два дерева в 2-3 плитках от пути,
+## чтобы было видно, как персонаж ходит и что можно рубить.
+func spawn_start_trees(pivot: Vector2i) -> void:
+	var tree_scene := load(TREE_SCENE_PATH) as PackedScene
+	if tree_scene == null:
+		push_warning("GameGrid: сцена дерева не найдена: %s" % TREE_SCENE_PATH)
+		return
+	var parent := get_node_or_null("../Objects")
+	if parent == null:
+		parent = self
+	for off in [Vector2i(2, 1), Vector2i(-1, 3)]:
+		var cell := pivot + off
+		if not _in_bounds(cell) or not TileDB.is_walkable(get_tile(cell)):
+			continue
+		var tree := tree_scene.instantiate() as Tree
+		tree.setup(self, cell)
+		parent.add_child(tree)
+		tree.place()
 
 
 # ------------------------------------------------------------- отрисовка ----
@@ -163,7 +201,9 @@ func _has_atlas(atlas_coords: Vector2i) -> bool:
 	for i in range(_tile_set.get_source_count()):
 		var sid := _tile_set.get_source_id(i)
 		var src := _tile_set.get_source(sid) as TileSetAtlasSource
-		if src and src.has_atlas_tile(atlas_coords):
+		# В Godot/Redot 4.x метод has_atlas_tile() отсутствует; проверяем через
+		# список доступных координат атласа источника.
+		if src and src.get_atlas_tiles().has(atlas_coords):
 			return true
 	return false
 

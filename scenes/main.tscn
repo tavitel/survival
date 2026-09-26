@@ -1,8 +1,9 @@
-[gd_scene load_steps=4 format=3 uid="uid://cmain00scene1"]
+[gd_scene load_steps=5 format=3 uid="uid://cmain00scene1"]
 
 [ext_resource type="Script" path="res://scripts/main.gd" id="1_main"]
-[ext_resource type="Script" path="res://scripts/game_grid.gd" id="3_gridmap"]
-[ext_resource type="PackedScene" uid="uid://cplayer00sc1" path="res://scenes/player.tscn" id="2_player"]
+[ext_resource type="Script" path="res://scripts/game_grid.gd" id="2_gridmap"]
+[ext_resource type="PackedScene" uid="uid://cplayer00sc1" path="res://scenes/player.tscn" id="3_player"]
+[ext_resource type="Script" path="res://scripts/game_ui.gd" id="4_ui"]
 
 [node name="Main" type="Node2D"]
 script = ExtResource("1_main")
@@ -10,6 +11,19 @@ script = ExtResource("1_main")
 [node name="World" type="Node2D" parent="."]
 
 [node name="Map" type="Node2D" parent="World" groups=["grid_map"]]
-script = ExtResource("3_gridmap")
+script = ExtResource("2_gridmap")
 
-[node name="Player" parent="World" instance=ExtResource("2_player")]
+[node name="Objects" type="Node2D" parent="World"]
+
+[node name="Player" parent="World" instance=ExtResource("3_player")]
+
+[node name="CanvasLayer" type="CanvasLayer" parent="."]
+
+[node name="UI" type="Control" parent="CanvasLayer"]
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+script = ExtResource("4_ui")

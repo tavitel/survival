@@ -24,19 +24,26 @@ func _ready() -> void:
 	position_smoothing_enabled = false
 
 
+## Мгновенная привязка камеры к цели (при старте/телепорте игрока).
+func snap() -> void:
+	if target == null or _bounds.size == Vector2.ZERO:
+		return
+	global_position = _clamped_target_pos()
+
+
 func _process(delta: float) -> void:
 	if target == null or _bounds.size == Vector2.ZERO:
 		return
+	global_position = global_position.lerp(_clamped_target_pos(), clampf(follow_speed * delta, 0.0, 1.0))
+
+
+func _clamped_target_pos() -> Vector2:
 	var limit := Vector2(edge_tiles * Config.TILE_SIZE.x, edge_tiles * Config.TILE_SIZE.y)
 	var lo := _bounds.position + limit
 	var hi := _bounds.end - limit
 	var want := target.global_position
 	# Ограничиваем центр камеры так, чтобы он не выходил за [lo, hi].
 	# Если поле меньше окна обзора по какой-то оси — центрируем по этой оси.
-	var min_c := minf(lo.x, hi.x)
-	var max_c := maxf(lo.x, hi.x)
-	want.x = clampf(want.x, min_c, max_c)
-	min_c = minf(lo.y, hi.y)
-	max_c = maxf(lo.y, hi.y)
-	want.y = clampf(want.y, min_c, max_c)
-	global_position = global_position.lerp(want, clampf(follow_speed * delta, 0.0, 1.0))
+	want.x = clampf(want.x, minf(lo.x, hi.x), maxf(lo.x, hi.x))
+	want.y = clampf(want.y, minf(lo.y, hi.y), maxf(lo.y, hi.y))
+	return want

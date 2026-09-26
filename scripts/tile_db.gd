@@ -6,14 +6,14 @@ extends Node
 ## проходимости. Проходимость хранится ЗДЕСЬ (а не в самом тайлсете), чтобы
 ## и игрок, и будущие мобы проверяли её через один источник истины.
 
-const GRASS := 0
+const DIRT := 0
 const STONE := 1
 const WATER := 2
 const MISSING := 3   # отсутствующая клетка карты -> прозрачная плитка-заглушка
 
 var _defs := {
 	MISSING: {"name": "missing", "atlas": Config.FALLBACK_TILE_ATLAS, "walkable": true},
-	GRASS:   {"name": "grass",   "atlas": 0, "walkable": true},
+	DIRT:   {"name": "dirt",   "atlas": 0, "walkable": true},
 	STONE:   {"name": "stone",   "atlas": 1, "walkable": true},
 	WATER:   {"name": "water",   "atlas": 2, "walkable": false},
 }
