@@ -50,7 +50,7 @@ func _physics_process(delta: float) -> void:
 
 func _unhandled_input(event: InputEvent) -> void:
 	if event is InputEventKey and event.pressed and not event.echo:
-		var k := event.physical_keycode
+		var k: int = event.physical_keycode
 		if k >= KEY_1 and k <= KEY_9:
 			if inventory:
 				inventory.select_slot(k - KEY_1)   # цифры 1-9 = слоты хотбара
@@ -99,11 +99,11 @@ func _try_chop() -> void:
 	inventory.changed.emit()
 
 
-func _nearest_tree_in_range() -> Tree:
-	var best: Tree = null
+func _nearest_tree_in_range() -> GameTree:
+	var best: GameTree = null
 	var best_d := Config.CHOP_RANGE_TILES * float(Config.TILE_SIZE.x)
 	for node in get_tree().get_nodes_in_group("harvestables"):
-		var t := node as Tree
+		var t := node as GameTree
 		if t == null or not is_instance_valid(t):
 			continue
 		# Считаем расстояние до основания дерева (клетки), а не до верхушки.
@@ -117,12 +117,17 @@ func _nearest_tree_in_range() -> Tree:
 # --------------------------------------------------------------- анимация ---
 
 func _update_animation() -> void:
+	var frames := _sprite.sprite_frames
+	if frames == null:
+		return
 	var anim: String = "idle_" + DIRS[facing]
 	if moving:
 		anim = "walk_" + DIRS[facing]
-	if _sprite.sprite_frames.has_animation(anim):
-		if _sprite.animation != anim or not _sprite.is_playing():
-			_sprite.play(anim)
+	# Анимация ещё не построена (первый кадр) — ждём, ошибок быть не должно.
+	if not frames.has_animation(anim):
+		return
+	if _sprite.animation != anim or not _sprite.is_playing():
+		_sprite.play(anim)
 
 
 ## Лёгкий визуальный «замах»: спрайт наклоняется в сторону удара топором.

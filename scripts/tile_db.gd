@@ -12,10 +12,10 @@ const WATER := 2
 const MISSING := 3   # отсутствующая клетка карты -> прозрачная плитка-заглушка
 
 var _defs := {
-	MISSING: {"name": "missing", "atlas": Config.FALLBACK_TILE_ATLAS, "walkable": true},
-	DIRT:   {"name": "dirt",   "atlas": 0, "walkable": true},
-	STONE:   {"name": "stone",   "atlas": 1, "walkable": true},
-	WATER:   {"name": "water",   "atlas": 2, "walkable": false},
+	MISSING: {"name": "missing", "source": Config.FALLBACK_TILE_ATLAS, "atlas": Vector2i.ZERO, "walkable": true},
+	DIRT:    {"name": "dirt",    "source": 0, "atlas": Vector2i(0, 0), "walkable": true},
+	STONE:   {"name": "stone",   "source": 0, "atlas": Vector2i(1, 0), "walkable": true},
+	WATER:   {"name": "water",   "source": 0, "atlas": Vector2i(2, 0), "walkable": false},
 }
 
 
@@ -27,10 +27,14 @@ func name_of(id: int) -> String:
 	return String(_defs.get(id, {}).get("name", "?"))
 
 
-## Номер атласа тайла внутри тайлсета. Для MISSING возвращает служебный атлас
-## заглушки (добавляется в тайлсет программно).
-func atlas_of(id: int) -> int:
-	return int(_defs.get(id, {}).get("atlas", Config.FALLBACK_TILE_ATLAS))
+## Индекс TileSetAtlasSource, в котором лежит тайл.
+func source_of(id: int) -> int:
+	return int(_defs.get(id, {}).get("source", Config.FALLBACK_TILE_ATLAS))
+
+
+## Координаты плитки внутри атласа источника.
+func atlas_of(id: int) -> Vector2i:
+	return _defs.get(id, {}).get("atlas", Vector2i.ZERO)
 
 
 func is_walkable(id: int) -> bool:
