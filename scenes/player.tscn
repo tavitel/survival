@@ -1,0 +1,20 @@
+[gd_scene load_steps=5 format=3 uid="uid://cplayer00sc1"]
+
+[ext_resource type="Script" path="res://scripts/player.gd" id="1_player"]
+[ext_resource type="Script" path="res://scripts/game_camera.gd" id="2_camera"]
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_body"]
+size = Vector2(12, 8)
+
+[node name="Player" type="CharacterBody2D" groups=["players"]]
+script = ExtResource("1_player")
+
+[node name="Sprite" type="AnimatedSprite2D" parent="."]
+offset = Vector2(0, -6)
+
+[node name="Collision" type="CollisionShape2D" parent="."]
+position = Vector2(0, 6)
+shape = SubResource("RectangleShape2D_body")
+
+[node name="Camera" type="Camera2D" parent="."]
+script = ExtResource("2_camera")
