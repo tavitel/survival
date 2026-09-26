@@ -1,4 +1,4 @@
-class_name Tree
+class_name GameTree
 extends Harvestable
 ## Дерево: сущность на клетке карты. Непроходимо, рубится топором (hit),
 ## при спиле даёт брёвна (drops) и освобождает клетку.
@@ -34,7 +34,7 @@ func _build_animations() -> void:
 	frames.remove_animation("default")
 	var sheet := load(SHEET) as Texture2D
 	if sheet == null:
-		push_warning("Tree: не найден спрайт %s" % SHEET)
+		push_warning("GameTree: не найден спрайт %s" % SHEET)
 		return
 	frames.add_animation("hit")
 	frames.set_animation_loop("hit", false)

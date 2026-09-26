@@ -22,11 +22,14 @@ var _slot_icons: Array[Control] = []   # все визуальные слоты 
 
 
 func _ready() -> void:
+	# Подстраховка: если inventory не назначен извне (main.gd), создаём пустой —
+	# иначе сборка панели падает и экран остаётся чёрным.
+	if inventory == null:
+		inventory = Inventory.new()
 	mouse_filter = Control.MOUSE_FILTER_IGNORE
 	_build_hotbar()
 	_build_panel()
-	if inventory != null:
-		inventory.changed.connect(_refresh)
+	inventory.changed.connect(_refresh)
 	_refresh()
 
 
@@ -131,7 +134,7 @@ func _make_slot(index: int) -> Control:
 	panel.add_child(count)
 
 	_slot_icons.append(icon)
-	panel.meta["slot"] = index
+	panel.set_meta("slot", index)
 	return panel
 
 

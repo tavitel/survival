@@ -25,6 +25,7 @@ var _cells := {}                 # Vector2i -> int (id тайла)
 var _blocked := {}               # Vector2i -> true (клетки, перекрытые объектами: деревья)
 var _tile_set: TileSet
 var _layer: TileMapLayer
+var _atlas_landscape: Array[Vector2i] = []   # реально существующие тайлы атласа ландшафта
 
 
 func _ready() -> void:
@@ -135,10 +136,10 @@ func spawn_start_trees(pivot: Vector2i) -> void:
 	if parent == null:
 		parent = self
 	for off in [Vector2i(2, 1), Vector2i(-1, 3)]:
-		var cell := pivot + off
-		if not _in_bounds(cell) or not TileDB.is_walkable(get_tile(cell)):
+		var cell: Vector2i = pivot + off
+		if not _in_bounds(cell) or not is_cell_walkable(cell):
 			continue
-		var tree := tree_scene.instantiate() as Tree
+		var tree := tree_scene.instantiate() as GameTree
 		tree.setup(self, cell)
 		parent.add_child(tree)
 		tree.place()
@@ -160,6 +161,10 @@ func _build_tileset() -> void:
 			for c in range(cols):
 				# 4-й аргумент — number_of_tiles (одиночная плитка).
 				source.create_tile(Vector2i(c, r), Vector2i.ONE)
+		# Запоминаем, какие тайлы реально есть в атласе ландшафта.
+		for r in range(rows):
+			for c in range(cols):
+				_atlas_landscape.append(Vector2i(c, r))
 		_tile_set.add_source(source, 0)
 
 	# Служебный источник с прозрачной плиткой-заглушкой (атлас FALLBACK_TILE_ATLAS).
@@ -181,7 +186,8 @@ func _build_layer() -> void:
 	_layer.name = "Tiles"
 	_layer.tile_set = _tile_set
 	add_child(_layer)
-	for cell in _cells.keys():
+	var keys: Array = _cells.keys()
+	for cell in keys:
 		_place(cell)
 
 
@@ -189,23 +195,29 @@ func _build_layer() -> void:
 ## подставляется прозрачная плитка-заглушка (FALLBACK_TILE_ATLAS).
 func _place(cell: Vector2i) -> void:
 	var tile_id := get_tile(cell)
-	var atlas_coords := Vector2i(TileDB.atlas_of(tile_id), 0)
-	if not _has_atlas(atlas_coords):
-		atlas_coords = Vector2i(Config.FALLBACK_TILE_ATLAS, 0)
-	_layer.set_cell(cell, atlas_coords.x, Vector2i(atlas_coords.y, 0))
+	var src_id: int = TileDB.source_of(tile_id)
+	var atlas_coords: Vector2i = TileDB.atlas_of(tile_id)
+	if not _has_atlas(src_id, atlas_coords):
+		# Атлас не найден в тайлсете — клетку закрываем прозрачной заглушкой.
+		src_id = Config.FALLBACK_TILE_ATLAS
+		atlas_coords = Vector2i.ZERO
+	_layer.set_cell(cell, src_id, atlas_coords)
 
 
-func _has_atlas(atlas_coords: Vector2i) -> bool:
+## Есть ли у конкретного источника тайл с такими координатами атласа.
+## Универсально для всех версий Godot/Redot 4.x: у источников из файлов
+## (.tres) проверяем через get_tile_data(), а основной атлас ландшафта —
+## по списку реально созданных тайлов (_atlas_landscape), т.к. часть методов
+## (has_atlas_tile/get_atlas_tiles) появилась только в 4.4+.
+func _has_atlas(source_id: int, atlas_coords: Vector2i) -> bool:
 	if _tile_set == null:
 		return false
-	for i in range(_tile_set.get_source_count()):
-		var sid := _tile_set.get_source_id(i)
-		var src := _tile_set.get_source(sid) as TileSetAtlasSource
-		# В Godot/Redot 4.x метод has_atlas_tile() отсутствует; проверяем через
-		# список доступных координат атласа источника.
-		if src and src.get_atlas_tiles().has(atlas_coords):
-			return true
-	return false
+	if source_id == 0:
+		return _atlas_landscape.has(atlas_coords)
+	var src := _tile_set.get_source(source_id) as TileSetAtlasSource
+	if src == null:
+		return false
+	return src.get_tile_data(atlas_coords, 0) != null
 
 
 func _in_bounds(cell: Vector2i) -> bool:
