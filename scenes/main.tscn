@@ -1,0 +1,15 @@
+[gd_scene load_steps=4 format=3 uid="uid://cmain00scene1"]
+
+[ext_resource type="Script" path="res://scripts/main.gd" id="1_main"]
+[ext_resource type="Script" path="res://scripts/game_grid.gd" id="3_gridmap"]
+[ext_resource type="PackedScene" uid="uid://cplayer00sc1" path="res://scenes/player.tscn" id="2_player"]
+
+[node name="Main" type="Node2D"]
+script = ExtResource("1_main")
+
+[node name="World" type="Node2D" parent="."]
+
+[node name="Map" type="Node2D" parent="World" groups=["grid_map"]]
+script = ExtResource("3_gridmap")
+
+[node name="Player" parent="World" instance=ExtResource("2_player")]
